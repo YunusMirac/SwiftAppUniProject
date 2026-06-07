@@ -6,103 +6,100 @@
 //
 
 import SwiftUI
+import Combine
 
 struct EmojiMemoSpielView: View {
-    // Button wird gewählt und Array wird mit den Emojis befüllt.
-    @State var emojis: Array<String> = []
+    
+    @ObservedObject var emojiMemoSpielVM: EmojiMemoSpielVM
     
     var body: some View {
         VStack {
-            Text("Memospiel!").font(.largeTitle)
-            //Scrollbarer View falls alle Karten nicht mehr reinpassen
-            ScrollView{
+            // Themenname wird vom ViewModel bereitgestellt und oben angezeigt.
+            Text(emojiMemoSpielVM.themaName)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .padding(.top)
+            
+            // Punktestand wird vom ViewModel read-only bereitgestellt.
+            Text("Punkte: \(emojiMemoSpielVM.punkte)")
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            ScrollView {
                 karten
+                    .animation(.default, value: emojiMemoSpielVM.karten)
             }
-            kartenSteuerung
+            
+            HStack {
+                Button("Mischen") {
+                    emojiMemoSpielVM.mischen()
+                }
+                // Intent-Button: ruft die ViewModel-Funktion für ein komplett neues Spiel auf.
+                Button("Neues Spiel") {
+                    emojiMemoSpielVM.neuesSpiel()
+                }
+            }
+            .padding()
         }
-        .padding()
     }
     
     var karten: some View {
         // Nutze ganze breite des Bildschirms und jede Karte soll 80 breit sein
-        let columns = [GridItem(.adaptive(minimum: 85))]
+        let columns = [GridItem(.adaptive(minimum: 85), spacing: 0)]
         
-        // Lädt nur die Karten die gerade audf dem Bildschirm zusehen sind und nimmt die Vorgaben von columns
+        // Lädt nur die Karten, die gerade auf dem Bildschirm zu sehen sind, und nimmt die Vorgaben von columns
         return LazyVGrid(columns: columns) {
             // Iteriert und erstellt für jedes Emoji eine Karte
-            ForEach(0..<emojis.count, id: \.self) { index in
-                CardView(content: emojis[index])
-                    .font(.largeTitle) // größe
-                    .aspectRatio(1, contentMode: .fit) // Sorgt für die richtige Kartenform
-            }
-        }
-        .foregroundStyle(Color.orange)
-    }
-    
-    var kartenSteuerung: some View {
-        HStack {
-            // --- BUTTON 1: TIERE ---
-            // array wird 2 mal mit den selben emojis befüllt für mmoryspiel und hat eine zufällighe Reihenfolge
-            Button(action: {
-                emojis = (animal + animal).shuffled()
-            }) {
-                // untereinander
-                VStack {
-                    //esrstellt bild mit einem Text drunter
-                    Image(systemName: "pawprint.circle.fill").font(.largeTitle)
-                    Text("Tiere").font(.caption)
-                }
-            }
-            
-            Spacer()
-            
-            // --- BUTTON 2: TRANSPORT ---
-            Button(action: {
-                emojis = (transport + transport).shuffled()
-            }) {
-                VStack {
-                    Image(systemName: "car.circle.fill").font(.largeTitle)
-                    Text("Transport").font(.caption)
-                }
-            }
-            
-            Spacer()
-            
-            // --- BUTTON 3: FLAGGEN ---
-            Button(action: {
-                emojis = (flagg + flagg).shuffled()
-            }) {
-                VStack {
-                    Image(systemName: "flag.circle.fill").font(.largeTitle)
-                    Text("Flaggen").font(.caption)
-                }
+            ForEach(emojiMemoSpielVM.karten) {
+                karte in
+                // BONUS 3: Gradient als Farbe (ShapeStyle Übergabe)
+                CardView(karte, kartenStyle: emojiMemoSpielVM.kartenStyle)
+                    .aspectRatio(2/3, contentMode: .fit)
+                    .padding(4)
+                    .onTapGesture {
+                        emojiMemoSpielVM
+                            .waehleKarte(karte)
+                    }
+
             }
         }
     }
 }
 
+/// Stellt eine einzelne Karte dar und kümmert sich um das Zeichnen der Form.
 struct CardView: View {
-    let content: String
-    @State var istGesichtOben: Bool = false
+    
+    let karte: MemoSpielModal<String>.Karte
+    // BONUS 3: Gradient als Farbe (ShapeStyle Übergabe)
+    let kartenStyle: AnyShapeStyle
+    
+    init(_ karte: MemoSpielModal<String>.Karte, kartenStyle: AnyShapeStyle) {
+        self.karte = karte
+        self.kartenStyle = kartenStyle
+    }
+    
     var body: some View {
         ZStack {
-            let basis: RoundedRectangle = RoundedRectangle(cornerRadius: 12)
-            if istGesichtOben {
+            let basis = RoundedRectangle(cornerRadius: 12)
+            Group {
                 basis.fill(.white)
-                basis.strokeBorder(lineWidth: 2)
+                basis.strokeBorder(kartenStyle, lineWidth: 2)
+                Text(karte.inhalt)
+                    .font(.system(size:200))
+                    .minimumScaleFactor(0.001)
+                    .aspectRatio(1, contentMode: .fit)
+                    
                 
-                Text(content)
             }
-            else {
-                RoundedRectangle(cornerRadius: 5).fill()
-            }
-        }.onTapGesture {
-            istGesichtOben.toggle()
+            .opacity(karte.istGesichtOben ? 1 : 0)
+            basis.fill(kartenStyle).opacity(karte.istGesichtOben ? 0 : 1)
+            
         }
+        .opacity(karte.istGesichtOben || !karte.istGeraten ? 1 : 0)
         
     }
 }
 
 #Preview {
-    EmojiMemoSpielView()
+    EmojiMemoSpielView(emojiMemoSpielVM: EmojiMemoSpielVM())
 }

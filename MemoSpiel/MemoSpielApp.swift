@@ -9,9 +9,10 @@ import SwiftUI
 
 @main
 struct MemoSpielApp: App {
+    @StateObject var meinSpielVM = EmojiMemoSpielVM()
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            EmojiMemoSpielView(emojiMemoSpielVM: meinSpielVM)
         }
     }
 }
