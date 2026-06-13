@@ -14,40 +14,43 @@ struct BundeslaenderMemoSpielView: View {
     @State private var kartenPosition: MapCameraPosition = .region(BundeslaenderMemoSpielVM.deutschlandRegion)
     
     var body: some View {
-        VStack {
-            Text("Lerne Deutschland kennen!")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .padding(.top)
-            
-            // Karte mit BRD-Fokus; Marker kommt ausschließlich aus dem ViewModel.
-            Map(position: $kartenPosition) {
-                if let koordinate = bundeslaenderMemoSpielVM.markerKoordinate {
-                    Marker(bundeslaenderMemoSpielVM.bundeslandName, coordinate: koordinate)
+        ScrollView {
+            VStack {
+                Text("Lerne Deutschland kennen!")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .padding(.top)
+                
+                // Karte mit BRD-Fokus; Marker kommt ausschließlich aus dem ViewModel.
+                Map(position: $kartenPosition) {
+                    if let koordinate = bundeslaenderMemoSpielVM.markerKoordinate {
+                        Marker(bundeslaenderMemoSpielVM.bundeslandName, coordinate: koordinate)
+                    }
                 }
-            }
-            .frame(height: 260)
-            .onAppear {
-                kartenPosition = .region(BundeslaenderMemoSpielVM.deutschlandRegion)
-            }
-            
-            Text(bundeslaenderMemoSpielVM.bundeslandName)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .padding(.vertical, 8)
-            
-            karten
-                .animation(.default, value: bundeslaenderMemoSpielVM.karten)
-            
-            HStack {
-                Button("Mischen") {
-                    bundeslaenderMemoSpielVM.mischen()
+                .frame(height: 260)
+                .onAppear {
+                    kartenPosition = .region(BundeslaenderMemoSpielVM.deutschlandRegion)
                 }
-                Button("Neues Spiel") {
-                    bundeslaenderMemoSpielVM.neuesSpiel()
+                
+                Text(bundeslaenderMemoSpielVM.bundeslandName)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .padding(.vertical, 8)
+                
+                karten
+                    .animation(.default, value: bundeslaenderMemoSpielVM.karten)
+                
+                HStack {
+                    Button("Mischen") {
+                        bundeslaenderMemoSpielVM.mischen()
+                    }
+                    Button("Neues Spiel") {
+                        bundeslaenderMemoSpielVM.neuesSpiel()
+                    }
                 }
+                .padding()
             }
-            .padding()
+            .padding(.bottom)
         }
     }
     
